@@ -1,0 +1,93 @@
+#include <stdio.h>
+#include <math.h>
+
+#define NUM_USERS 5
+#define NUM_MOVIES 5
+
+// Sample user-movie rating matrix (0 means the user hasn't rated the movie)
+int ratings[NUM_USERS][NUM_MOVIES] = {
+    {5, 3, 4, 4, 0},
+    {3, 1, 2, 3, 3},
+    {4, 3, 4, 3, 5},
+    {3, 3, 1, 5, 4},
+    {1, 5, 5, 2, 1}
+};
+
+// Function to calculate the Pearson correlation coefficient between two users
+double pearson_correlation(int user1[], int user2[], int length) {
+    int sum1 = 0, sum2 = 0, sum1Sq = 0, sum2Sq = 0, pSum = 0;
+    int n = 0;
+
+    for (int i = 0; i < length; i++) {
+        if (user1[i] != 0 && user2[i] != 0) {
+            sum1 += user1[i];
+            sum2 += user2[i];
+            sum1Sq += pow(user1[i], 2);
+            sum2Sq += pow(user2[i], 2);
+            pSum += user1[i] * user2[i];
+            n++;
+        }
+    }
+
+    if (n == 0) return 0;
+
+    double num = pSum - (sum1 * sum2 / (double)n);
+    double den = sqrt((sum1Sq - pow(sum1, 2) / (double)n) * (sum2Sq - pow(sum2, 2) / (double)n));
+    return (den == 0) ? 0 : num / den;
+}
+
+// Function to recommend a movie for a user
+void recommend_movies(int user_id) {
+    double similarities[NUM_USERS] = {0};
+    int current_user[NUM_MOVIES];
+
+    for (int i = 0; i < NUM_MOVIES; i++) {
+        current_user[i] = ratings[user_id][i];
+    }
+
+    // Calculate similarities between the current user and all other users
+    for (int i = 0; i < NUM_USERS; i++) {
+        if (i != user_id) {
+            similarities[i] = pearson_correlation(current_user, ratings[i], NUM_MOVIES);
+        }
+    }
+
+    double max_similarity = -1;
+    int most_similar_user = -1;
+
+    // Find the user with the highest similarity
+    for (int i = 0; i < NUM_USERS; i++) {
+        if (i != user_id && similarities[i] > max_similarity) {
+            max_similarity = similarities[i];
+            most_similar_user = i;
+        }
+    }
+
+    if (most_similar_user == -1) {
+        printf("No similar users found.\n");
+        return;
+    }
+
+    // Recommend movies that the most similar user liked
+    printf("Recommended movies for user %d:\n", user_id + 1);
+    for (int i = 0; i < NUM_MOVIES; i++) {
+        if (ratings[user_id][i] == 0 && ratings[most_similar_user][i] > 3) {
+            printf("Movie %d\n", i + 1);
+        }
+    }
+}
+
+int main() {
+    int user_id;
+    printf("Enter user ID (1 to 5): ");
+    scanf("%d", &user_id);
+
+    if (user_id < 1 || user_id > 5) {
+        printf("Invalid user ID.\n");
+        return 1;
+    }
+
+    recommend_movies(user_id - 1);
+
+    return 0;
+}
